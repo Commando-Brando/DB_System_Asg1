@@ -1,0 +1,2 @@
+NUKE VEHICLE vehicle.dat
+CREATE VEHICLE vehicle.dat 19 5
