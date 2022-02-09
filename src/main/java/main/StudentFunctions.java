@@ -25,33 +25,22 @@ public class StudentFunctions {
      * • return RC_OK.
      */
     public static int hashCreate(String fileName, HashHeader hashHeader) {
+
+        // check if file exists
         File file = new File(fileName);
+        if(file.exists())
+            return ReturnCodes.RC_FILE_EXISTS;
 
-        System.out.println("Opening file and writing beginning");
         try {
-//            if(!file.exists())
-//                return ReturnCodes.RC_FILE_EXISTS;
-
             RandomAccessFile binaryFile;
             binaryFile = new RandomAccessFile(fileName, "rw");
 
             HashFile hFile = new HashFile();
             hFile.setHashHeader(hashHeader);
             hFile.setFile(binaryFile);
-
-            int rba = 0;
             byte[] bytes = hashHeader.toByteArray();
             binaryFile.write(bytes);
-
-            System.out.println("Writing complete... Reading commencing...");
-
-            HashHeader readHash = new HashHeader();
-            byte[] readbytes = new byte[hashHeader.getRecSize()];
-            int total = binaryFile.read(readbytes);
-            System.out.println("read in " + total + " bytes");
-            readHash.fromByteArray(readbytes);
-            readHash.toString();
-
+            binaryFile.close();
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -70,7 +59,21 @@ public class StudentFunctions {
      * return RC_OK
      */
     public static int hashOpen(String fileName, HashFile hashFile) {
-        return ReturnCodes.RC_FILE_NOT_FOUND;
+
+        // check if file exists
+        File file = new File(fileName);
+        if(!file.exists())
+            return ReturnCodes.RC_FILE_NOT_FOUND;
+
+        try {
+            RandomAccessFile binaryFile = new RandomAccessFile(fileName, "r");
+            System.out.println(hashFile.getHashHeader().toString());
+
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+
+        return RC_OK;
     }
 
     /**
