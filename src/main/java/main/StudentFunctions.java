@@ -67,7 +67,9 @@ public class StudentFunctions {
 
         try {
             RandomAccessFile binaryFile = new RandomAccessFile(fileName, "r");
-            System.out.println(hashFile.getHashHeader().toString());
+            //System.out.println("Hash info: " + hashFile.getHashHeader().toString());
+            // after creating a new file the hashfile will have a hashheader with accurate info
+            // so read the file based on the hashfiles header's record size and verify it exists
 
         } catch (FileNotFoundException e) {
             e.printStackTrace();
