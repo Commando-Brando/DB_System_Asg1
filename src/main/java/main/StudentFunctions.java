@@ -10,6 +10,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
+import static misc.ReturnCodes.RC_HEADER_NOT_FOUND;
 import static misc.ReturnCodes.RC_OK;
 
 // RandomAccessFile Docs https://docs.oracle.com/javase/8/docs/api/java/io/RandomAccessFile.html
@@ -43,6 +44,7 @@ public class StudentFunctions {
             binaryFile.close();
 
         } catch (IOException e) {
+            System.out.println("IOException in hashCreate method");
             e.printStackTrace();
         }
         return RC_OK;
@@ -66,15 +68,23 @@ public class StudentFunctions {
             return ReturnCodes.RC_FILE_NOT_FOUND;
 
         try {
-            RandomAccessFile binaryFile = new RandomAccessFile(fileName, "r");
-            //System.out.println("Hash info: " + hashFile.getHashHeader().toString());
+            RandomAccessFile binaryFile = new RandomAccessFile(fileName, "rw");
+            // System.out.println("Hash info: " + hashFile.getHashHeader().toString());
             // after creating a new file the hashfile will have a hashheader with accurate info
             // so read the file based on the hashfiles header's record size and verify it exists
-
-        } catch (FileNotFoundException e) {
+            // TODO: 2/12/2022 is it just the header record size?
+            byte[] byteChecker = hashFile.getHashHeader().toByteArray();
+            int headerSize = byteChecker.length;
+            byte[] headerBytes = new byte[headerSize];
+            int numberOfBytesRead = binaryFile.read(headerBytes);
+            if(numberOfBytesRead == -1) {
+                return RC_HEADER_NOT_FOUND;
+            }
+            hashFile.setFile(binaryFile);
+        } catch (IOException e) {
+            System.out.println("IOException in hashOpen method");
             e.printStackTrace();
         }
-
         return RC_OK;
     }
 
@@ -92,6 +102,12 @@ public class StudentFunctions {
      * Note that in program #2, we will actually insert synonyms.
      */
     public static int vehicleInsert(HashFile hashFile, Vehicle vehicle) {
+        // TODO: 2/12/2022 write this method
+        int rbn = Main.hash(vehicle.getVehicleId(), hashFile.getHashHeader().getMaxHash());  // gets rbn based on vehicle hash value
+        int readStatus = readRec(hashFile, rbn, vehicle);
+        if(readStatus == ReturnCodes.RC_LOC_NOT_FOUND)
+            return ReturnCodes.RC_LOC_NOT_FOUND;
+
         return ReturnCodes.RC_SYNONYM;
     }
 
@@ -106,7 +122,21 @@ public class StudentFunctions {
      * was written to that location.  Why?
       */
     public static int readRec(HashFile hashFile, int rbn, Vehicle vehicle) {
-        return ReturnCodes.RC_LOC_NOT_FOUND;
+
+        long rba = (long) rbn * hashFile.getHashHeader().getRecSize();
+        try {
+            // TODO: 2/12/2022 do you need to account for hashheader size when seeking since seek starts from beginning of the file
+            hashFile.getFile().seek(rba);
+            byte[] vehicleBytes = new byte[hashFile.getHashHeader().getRecSize()];
+            hashFile.getFile().read(vehicleBytes);
+            vehicle.fromByteArray(vehicleBytes);
+        } catch (IOException e) {
+            System.out.println("IOException in readRec method");
+            e.printStackTrace();
+            return ReturnCodes.RC_LOC_NOT_FOUND;
+        }
+        // TODO: 2/12/2022 look at last line in pdf instructions for this method. do we need to verify it is a proper vehicle record?
+        return RC_OK;
     }
 
     /**
@@ -119,6 +149,15 @@ public class StudentFunctions {
      * Otherwise, return RC_OK.
      */
     public static int writeRec(HashFile hashFile, int rbn, Vehicle vehicle) {
+        long rba = (long) rbn * hashFile.getHashHeader().getRecSize(); // calculates rba: rbn * record size
+        try {
+            hashFile.getFile().seek(rba);
+
+        } catch (IOException e) {
+            System.out.println("IOException in writeRec method");
+            e.printStackTrace();
+        }
+
         return ReturnCodes.RC_LOC_NOT_WRITTEN;
     }
 
@@ -133,6 +172,7 @@ public class StudentFunctions {
      * Otherwise, return RC_REC_NOT_FOUND
      */
     public static int vehicleRead(HashFile hashFile, int rbn, Vehicle vehicle) {
+        // TODO: 2/12/2022 write this method
         return ReturnCodes.RC_REC_NOT_FOUND;
     }
 }
