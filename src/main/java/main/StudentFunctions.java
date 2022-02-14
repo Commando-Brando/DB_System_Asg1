@@ -9,9 +9,9 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.util.Arrays;
 
-import static misc.ReturnCodes.RC_HEADER_NOT_FOUND;
-import static misc.ReturnCodes.RC_OK;
+import static misc.ReturnCodes.*;
 
 // RandomAccessFile Docs https://docs.oracle.com/javase/8/docs/api/java/io/RandomAccessFile.html
 
@@ -73,9 +73,8 @@ public class StudentFunctions {
             // after creating a new file the hashfile will have a hashheader with accurate info
             // so read the file based on the hashfiles header's record size and verify it exists
             // TODO: 2/12/2022 is it just the header record size?
-            byte[] byteChecker = hashFile.getHashHeader().toByteArray();
-            int headerSize = byteChecker.length;
-            byte[] headerBytes = new byte[headerSize];
+            int recordSize = hashFile.getHashHeader().getRecSize();
+            byte[] headerBytes = new byte[recordSize];
             int numberOfBytesRead = binaryFile.read(headerBytes);
             if(numberOfBytesRead == -1) {
                 return RC_HEADER_NOT_FOUND;
@@ -102,12 +101,21 @@ public class StudentFunctions {
      * Note that in program #2, we will actually insert synonyms.
      */
     public static int vehicleInsert(HashFile hashFile, Vehicle vehicle) {
-        // TODO: 2/12/2022 write this method
+        Vehicle readRecVehicle = new Vehicle(); // makes new vehicle to be sent into readRec() and will be populated by the data at the rba
         int rbn = Main.hash(vehicle.getVehicleId(), hashFile.getHashHeader().getMaxHash());  // gets rbn based on vehicle hash value
-        int readStatus = readRec(hashFile, rbn, vehicle);
-        if(readStatus == ReturnCodes.RC_LOC_NOT_FOUND)
-            return ReturnCodes.RC_LOC_NOT_FOUND;
 
+        try {
+            int readStatus = readRec(hashFile, rbn, readRecVehicle); // reads in the data at the rbn and saves the data to readRecVehicle
+            if(readStatus == ReturnCodes.RC_LOC_NOT_FOUND || readRecVehicle.getVehicleId()[0] == 0){
+                writeRec(hashFile, rbn, vehicle);
+            } else if(Arrays.equals(readRecVehicle.getVehicleId(), vehicle.getVehicleId())) {
+                return RC_REC_EXISTS;
+            } else {
+                return RC_SYNONYM;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         return ReturnCodes.RC_SYNONYM;
     }
 
@@ -125,15 +133,18 @@ public class StudentFunctions {
 
         long rba = (long) rbn * hashFile.getHashHeader().getRecSize();
         try {
-            // TODO: 2/12/2022 do you need to account for hashheader size when seeking since seek starts from beginning of the file
+            // TODO: 2/12/2022 do you need to account for hashheader record when seeking since seek starts from beginning of the file
             hashFile.getFile().seek(rba);
             byte[] vehicleBytes = new byte[hashFile.getHashHeader().getRecSize()];
-            hashFile.getFile().read(vehicleBytes);
+            int bytesRead = hashFile.getFile().read(vehicleBytes);
+            if(bytesRead == -1) {
+                System.out.println("Location Not Found");
+                return ReturnCodes.RC_LOC_NOT_FOUND;
+            }
             vehicle.fromByteArray(vehicleBytes);
         } catch (IOException e) {
             System.out.println("IOException in readRec method");
             e.printStackTrace();
-            return ReturnCodes.RC_LOC_NOT_FOUND;
         }
         // TODO: 2/12/2022 look at last line in pdf instructions for this method. do we need to verify it is a proper vehicle record?
         return RC_OK;
@@ -149,16 +160,19 @@ public class StudentFunctions {
      * Otherwise, return RC_OK.
      */
     public static int writeRec(HashFile hashFile, int rbn, Vehicle vehicle) {
-        long rba = (long) rbn * hashFile.getHashHeader().getRecSize(); // calculates rba: rbn * record size
+        int recordSize = hashFile.getHashHeader().getRecSize();
+        long rba = (long) rbn * recordSize; // calculates rba: rbn * record size
         try {
             hashFile.getFile().seek(rba);
-
+            byte[] bytesToWrite = new byte[recordSize]; // initialize byte array based on record size
+            vehicle.fromByteArray(bytesToWrite); // fill byte array with the appropriate vehicle bytes
+            hashFile.getFile().write(bytesToWrite); // write the byte array to the file
         } catch (IOException e) {
             System.out.println("IOException in writeRec method");
             e.printStackTrace();
+            return RC_LOC_NOT_WRITTEN;
         }
-
-        return ReturnCodes.RC_LOC_NOT_WRITTEN;
+        return RC_OK;
     }
 
     /**
@@ -172,7 +186,14 @@ public class StudentFunctions {
      * Otherwise, return RC_REC_NOT_FOUND
      */
     public static int vehicleRead(HashFile hashFile, int rbn, Vehicle vehicle) {
-        // TODO: 2/12/2022 write this method
+        // TODO: 2/14/2022 why do the instructions say to calculate rbn when it is calculated in main and passed as a parameter
+        Vehicle readRecVehicle = new Vehicle();
+        int bytesRead = readRec(hashFile, rbn, readRecVehicle);
+        if(Arrays.equals(readRecVehicle.getVehicleId(), vehicle.getVehicleId())) {
+            // TODO: 2/14/2022 why does the 4th bullet point say to return the vehicle via the vehicle parameter if they match since it already is the vehicle...
+            vehicle = readRecVehicle;
+            return RC_OK;
+        }
         return ReturnCodes.RC_REC_NOT_FOUND;
     }
 }
