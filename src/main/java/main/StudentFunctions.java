@@ -14,6 +14,7 @@ import java.util.Arrays;
 import static misc.ReturnCodes.*;
 
 // RandomAccessFile Docs https://docs.oracle.com/javase/8/docs/api/java/io/RandomAccessFile.html
+// TODO: 2/14/2022 currently everything works except I am getting different hash values for my output
 
 public class StudentFunctions {
     /**
@@ -116,7 +117,7 @@ public class StudentFunctions {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        return ReturnCodes.RC_SYNONYM;
+        return RC_OK;
     }
 
     /**
@@ -138,7 +139,6 @@ public class StudentFunctions {
             byte[] vehicleBytes = new byte[hashFile.getHashHeader().getRecSize()];
             int bytesRead = hashFile.getFile().read(vehicleBytes);
             if(bytesRead == -1) {
-                System.out.println("Location Not Found");
                 return ReturnCodes.RC_LOC_NOT_FOUND;
             }
             vehicle.fromByteArray(vehicleBytes);
@@ -165,13 +165,14 @@ public class StudentFunctions {
         try {
             hashFile.getFile().seek(rba);
             byte[] bytesToWrite = new byte[recordSize]; // initialize byte array based on record size
-            vehicle.fromByteArray(bytesToWrite); // fill byte array with the appropriate vehicle bytes
+            bytesToWrite = vehicle.toByteArray(); // fill byte array with the appropriate vehicle bytes
             hashFile.getFile().write(bytesToWrite); // write the byte array to the file
         } catch (IOException e) {
             System.out.println("IOException in writeRec method");
             e.printStackTrace();
             return RC_LOC_NOT_WRITTEN;
         }
+        //System.out.println("write sucessful");
         return RC_OK;
     }
 
@@ -186,12 +187,10 @@ public class StudentFunctions {
      * Otherwise, return RC_REC_NOT_FOUND
      */
     public static int vehicleRead(HashFile hashFile, int rbn, Vehicle vehicle) {
-        // TODO: 2/14/2022 why do the instructions say to calculate rbn when it is calculated in main and passed as a parameter
         Vehicle readRecVehicle = new Vehicle();
         int bytesRead = readRec(hashFile, rbn, readRecVehicle);
-        if(Arrays.equals(readRecVehicle.getVehicleId(), vehicle.getVehicleId())) {
-            // TODO: 2/14/2022 why does the 4th bullet point say to return the vehicle via the vehicle parameter if they match since it already is the vehicle...
-            vehicle = readRecVehicle;
+        if(readRecVehicle.getVehicleIdAsString().equals(vehicle.getVehicleIdAsString())) {
+            vehicle.fromByteArray(readRecVehicle.toByteArray());
             return RC_OK;
         }
         return ReturnCodes.RC_REC_NOT_FOUND;

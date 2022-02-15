@@ -90,7 +90,6 @@ public class Main {
 
         while(input.hasNextLine()) {
             String line = input.nextLine().trim();
-            System.out.println(line);
             if(line.length() > 0) {
                 processLine(line);
             }
