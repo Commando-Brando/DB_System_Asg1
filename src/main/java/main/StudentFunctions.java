@@ -69,18 +69,15 @@ public class StudentFunctions {
             return ReturnCodes.RC_FILE_NOT_FOUND;
 
         try {
-            RandomAccessFile binaryFile = new RandomAccessFile(fileName, "rw");
-            // System.out.println("Hash info: " + hashFile.getHashHeader().toString());
-            // after creating a new file the hashfile will have a hashheader with accurate info
-            // so read the file based on the hashfiles header's record size and verify it exists
-            // TODO: 2/12/2022 is it just the header record size?
+            RandomAccessFile binaryFile = new RandomAccessFile(fileName, "rw"); // opens RandomAccessFile for read/write
             int recordSize = hashFile.getHashHeader().getRecSize();
             byte[] headerBytes = new byte[recordSize];
             int numberOfBytesRead = binaryFile.read(headerBytes);
             if(numberOfBytesRead == -1) {
                 return RC_HEADER_NOT_FOUND;
             }
-            hashFile.setFile(binaryFile);
+            hashFile.setFile(binaryFile); // sets the HashFile's RandomAccessFile object pointer to the current file
+            hashFile.getHashHeader().fromByteArray(headerBytes); // sets the HashFile's header to the one read in from the file
         } catch (IOException e) {
             System.out.println("IOException in hashOpen method");
             e.printStackTrace();

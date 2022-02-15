@@ -117,7 +117,6 @@ public class Main {
                     hashFile.getHashHeader().setMaxProbe(Integer.parseInt(tokens[4]));
                     hashFile.getHashHeader().setRecSize(Vehicle.sizeOf());
                     System.out.printf("    Record size is %d\n", hashFile.getHashHeader().getRecSize());
-                    System.out.println("About to enter the file");
                     int rc = StudentFunctions.hashCreate(fileName, hashFile.getHashHeader());
                     if (rc != ReturnCodes.RC_OK)
                         ReturnCodes.printRC(rc);
