@@ -105,8 +105,10 @@ public class StudentFunctions {
         try {
             int readStatus = readRec(hashFile, rbn, readRecVehicle); // reads in the data at the rbn and saves the data to readRecVehicle
             if(readStatus == ReturnCodes.RC_LOC_NOT_FOUND || readRecVehicle.getVehicleId()[0] == 0){
-                writeRec(hashFile, rbn, vehicle);
-            } else if(Arrays.equals(readRecVehicle.getVehicleId(), vehicle.getVehicleId())) {
+                int writeRC = writeRec(hashFile, rbn, vehicle);
+//                if(writeRC == RC_OK)
+//                    System.out.println("Vehicle: " + vehicle.getVehicleIdAsString() + " has been written");
+            } else if(readRecVehicle.getVehicleIdAsString().equals(vehicle.getVehicleIdAsString())) {
                 return RC_REC_EXISTS;
             } else {
                 return RC_SYNONYM;
@@ -128,13 +130,13 @@ public class StudentFunctions {
      * was written to that location.  Why?
       */
     public static int readRec(HashFile hashFile, int rbn, Vehicle vehicle) {
-
-        long rba = (long) rbn * hashFile.getHashHeader().getRecSize();
+        int recordSize = hashFile.getHashHeader().getRecSize();
+        long rba = (long) rbn * recordSize;
         try {
             // TODO: 2/12/2022 do you need to account for hashheader record when seeking since seek starts from beginning of the file
             hashFile.getFile().seek(rba);
-            byte[] vehicleBytes = new byte[hashFile.getHashHeader().getRecSize()];
-            int bytesRead = hashFile.getFile().read(vehicleBytes);
+            byte[] vehicleBytes = new byte[recordSize];
+            int bytesRead = hashFile.getFile().read(vehicleBytes, 0, recordSize);
             if(bytesRead == -1) {
                 return ReturnCodes.RC_LOC_NOT_FOUND;
             }
@@ -161,9 +163,10 @@ public class StudentFunctions {
         long rba = (long) rbn * recordSize; // calculates rba: rbn * record size
         try {
             hashFile.getFile().seek(rba);
-            byte[] bytesToWrite = new byte[recordSize]; // initialize byte array based on record size
+            byte[] bytesToWrite; // initialize byte array based on record size
             bytesToWrite = vehicle.toByteArray(); // fill byte array with the appropriate vehicle bytes
-            hashFile.getFile().write(bytesToWrite); // write the byte array to the file
+            hashFile.getFile().write(bytesToWrite, 0, recordSize); // write the byte array to the file
+            System.out.println("Vehicle: " + vehicle.getVehicleIdAsString() + " has been written");
         } catch (IOException e) {
             System.out.println("IOException in writeRec method");
             e.printStackTrace();
