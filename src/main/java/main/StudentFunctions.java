@@ -14,7 +14,6 @@ import java.util.Arrays;
 import static misc.ReturnCodes.*;
 
 // RandomAccessFile Docs https://docs.oracle.com/javase/8/docs/api/java/io/RandomAccessFile.html
-// TODO: 2/14/2022 currently everything works except I am getting different hash values for my output
 
 public class StudentFunctions {
     /**
@@ -106,8 +105,6 @@ public class StudentFunctions {
             int readStatus = readRec(hashFile, rbn, readRecVehicle); // reads in the data at the rbn and saves the data to readRecVehicle
             if(readStatus == ReturnCodes.RC_LOC_NOT_FOUND || readRecVehicle.getVehicleId()[0] == 0){
                 int writeRC = writeRec(hashFile, rbn, vehicle);
-//                if(writeRC == RC_OK)
-//                    System.out.println("Vehicle: " + vehicle.getVehicleIdAsString() + " has been written");
             } else if(readRecVehicle.getVehicleIdAsString().equals(vehicle.getVehicleIdAsString())) {
                 return RC_REC_EXISTS;
             } else {
@@ -166,13 +163,11 @@ public class StudentFunctions {
             byte[] bytesToWrite; // initialize byte array based on record size
             bytesToWrite = vehicle.toByteArray(); // fill byte array with the appropriate vehicle bytes
             hashFile.getFile().write(bytesToWrite, 0, recordSize); // write the byte array to the file
-            System.out.println("Vehicle: " + vehicle.getVehicleIdAsString() + " has been written");
         } catch (IOException e) {
             System.out.println("IOException in writeRec method");
             e.printStackTrace();
             return RC_LOC_NOT_WRITTEN;
         }
-        //System.out.println("write sucessful");
         return RC_OK;
     }
 
